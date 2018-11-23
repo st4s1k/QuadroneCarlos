@@ -1,0 +1,24 @@
+#!/bin/bash
+
+if [[ $# -ne 1 ]]; then
+	echo "Bad arguments!"
+	exit
+fi
+
+if [[ $1 == "compile" ]]; then
+	avr-gcc -mmcu=atmega328pb -Os src/quadronecarlos.c -o obj/quadronecarlos.o
+elif [[ $1 == "build" ]]; then
+	avr-objcopy -j .text -j .data -O ihex  obj/quadronecarlos.o  hex/quadronecarlos.hex
+elif [[ $1 == "upload" ]]; then
+	avrdude -c usbtiny -p m328p -P usb -U flash:w:hex/quadronecarlos.hex
+elif [[ $1 == "size" ]]; then
+	avr-size hex/quadronecarlos.hex
+elif [[ $1 == "clean" ]]; then
+	rm -rf obj/* hex/*
+elif [[ $1 == "all" ]]; then
+	$0 compile && $0 build
+elif [[ $1 == "re" ]]; then
+	$0 clean && $0 all
+else
+	echo "Bad arguments!"
+fi
