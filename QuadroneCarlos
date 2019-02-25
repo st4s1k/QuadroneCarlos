@@ -6,11 +6,11 @@ if [[ $# -ne 1 ]]; then
 fi
 
 if [[ $1 == "compile" ]]; then
-	avr-gcc -mmcu=atmega328pb -Os src/quadronecarlos.c -o obj/quadronecarlos.o
+	avr-gcc -mmcu=atmega328pb -Os src/* -o obj/quadronecarlos.o
 elif [[ $1 == "build" ]]; then
 	avr-objcopy -j .text -j .data -O ihex  obj/quadronecarlos.o  hex/quadronecarlos.hex
 elif [[ $1 == "upload" ]]; then
-	avrdude -c usbtiny -p m328p -P usb -U flash:w:hex/quadronecarlos.hex
+	avrdude -c usbtiny -p m328pb -P usb -U flash:w:hex/quadronecarlos.hex
 elif [[ $1 == "size" ]]; then
 	avr-size hex/quadronecarlos.hex
 elif [[ $1 == "clean" ]]; then
@@ -19,6 +19,21 @@ elif [[ $1 == "all" ]]; then
 	$0 compile && $0 build
 elif [[ $1 == "re" ]]; then
 	$0 clean && $0 all
-else
+elif [[ $1 == "help" ]]; then
+	printf "QuadroneCarlos v1.0\n\n"
+
+	printf "Usage:\n"
+	printf "\t%s [argument]\n\n" $0
+
+	printf "Arguments:\n"
+	printf "\thelp\t-\topen current help view\n"
+	printf "\tcompile\t-\tgenerate object files\n"
+	printf "\tbuild\t-\tgenerate hex file\n"
+	printf "\tupload\t-\t...\n"
+	printf "\tsize\t-\t...\n"
+	printf "\tclean\t-\tdelete all object and hex files\n"
+	printf "\tall\t-\tcompile & build\n"
+	printf "\tre\t-\tclean & all\n\n"
+else 
 	echo "Bad arguments!"
 fi
