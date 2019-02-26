@@ -1,39 +1,47 @@
 #!/bin/bash
 
-if [[ $# -ne 1 ]]; then
-	echo "Bad arguments!"
-	exit
-fi
-
-if [[ $1 == "compile" ]]; then
-	avr-gcc -mmcu=atmega328pb -Os src/* -o obj/quadronecarlos.o
-elif [[ $1 == "build" ]]; then
-	avr-objcopy -j .text -j .data -O ihex  obj/quadronecarlos.o  hex/quadronecarlos.hex
-elif [[ $1 == "upload" ]]; then
-	avrdude -c usbtiny -p m328pb -P usb -U flash:w:hex/quadronecarlos.hex
-elif [[ $1 == "size" ]]; then
-	avr-size hex/quadronecarlos.hex
-elif [[ $1 == "clean" ]]; then
-	rm -rf obj/* hex/*
-elif [[ $1 == "all" ]]; then
-	$0 compile && $0 build
-elif [[ $1 == "re" ]]; then
-	$0 clean && $0 all
-elif [[ $1 == "help" ]]; then
-	printf "QuadroneCarlos v1.0\n\n"
-
-	printf "Usage:\n"
-	printf "\t%s [argument]\n\n" $0
-
-	printf "Arguments:\n"
-	printf "\thelp\t-\topen current help view\n"
-	printf "\tcompile\t-\tgenerate object files\n"
-	printf "\tbuild\t-\tgenerate hex file\n"
-	printf "\tupload\t-\t...\n"
-	printf "\tsize\t-\t...\n"
-	printf "\tclean\t-\tdelete all object and hex files\n"
-	printf "\tall\t-\tcompile & build\n"
-	printf "\tre\t-\tclean & all\n\n"
-else 
-	echo "Bad arguments!"
-fi
+for var in "$@"
+do
+    case $var in
+        "compile")
+            avr-g++ -mmcu=atmega328pb -Os src/* -o obj/quadronecarlos.o
+        ;;
+        "build")
+            avr-objcopy -j .text -j .data -O ihex  obj/quadronecarlos.o  hex/quadronecarlos.hex
+        ;;
+        "upload")
+            avrdude -c usbtiny -p m328pb -P usb -U flash:w:hex/quadronecarlos.hex
+        ;;
+        "size")
+            avr-size hex/quadronecarlos.hex
+        ;;
+        "clean")
+            rm -rf obj/* hex/*
+        ;;
+        "all")
+            $0 compile build
+        ;;
+        "re")
+            $0 clean all
+        ;;
+        "help")
+            printf "QuadroneCarlos v1.0\n\n"
+            
+            printf "Usage:\n"
+            printf "\t%s [argument]\n\n" $0
+            
+            printf "Arguments:\n"
+            printf "\t help\t-\t open current help view\n"
+            printf "\t compile\t-\t generate object files\n"
+            printf "\t build\t-\t generate hex file\n"
+            printf "\t upload\t-\t ...\n"
+            printf "\t size\t-\t ...\n"
+            printf "\t clean\t-\t delete all object and hex files\n"
+            printf "\t all\t-\t compile & build\n"
+            printf "\tre\t-\t clean & all\n\n"
+        ;;
+        *)
+            printf "Bad argument: %s" $var
+            break 2
+    esac
+done
