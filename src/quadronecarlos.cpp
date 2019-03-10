@@ -31,35 +31,33 @@ void loop()
 
     int blink_delay = 5000;
 
-    blink = true;
+    blink = false;
 
-    if (BT_Serial.available() && BT_Serial.availableForWrite())
+    if (BT_Serial.available())
     {
         BT_Serial.write(BT_Serial.read());
+	
+	blink = true;
         blink_delay = 200;
-    }
-    else if (BT_Serial.available())
-    {
-        blink_delay = 500;
-    }
-    else if (BT_Serial.availableForWrite())
-    {
-	//BT_Serial.print("i'm here!\n");
-	BT_Serial.write('i');
-	BT_Serial.write('\'');
-	BT_Serial.write('m');
-	BT_Serial.write(' ');
-	BT_Serial.write('h');
-	BT_Serial.write('e');
-	BT_Serial.write('r');
-	BT_Serial.write('e');
-	BT_Serial.write('!');
-	BT_Serial.write('\n');
-	blink_delay = 1000;
     }
     else
     {
-        blink = false;
+	BT_Serial.print("i'm here! rand = ");
+	// BT_Serial.println(strlen("i'm here!"));
+	BT_Serial.println((int) rand() % 10);
+	//BT_Serial.write('s');
+	//BT_Serial.write('\'');
+	//BT_Serial.write('m');
+	//BT_Serial.write(' ');
+	//BT_Serial.write('h');
+	//BT_Serial.write('e');
+	//BT_Serial.write('r');
+	//BT_Serial.write('e');
+	//BT_Serial.write('!');
+	//BT_Serial.write('\n');
+
+	blink = true;
+	blink_delay = 1000;
     }
 
     if (blink)
@@ -70,8 +68,6 @@ void loop()
         case 200:
             _delay_ms(200);
             break;
-        case 500:
-            _delay_ms(500);
         case 1000:
             _delay_ms(1000);
             break;
@@ -82,8 +78,6 @@ void loop()
         case 200:
             _delay_ms(200);
             break;
-        case 500:
-            _delay_ms(500);
         case 1000:
             _delay_ms(1000);
             break;

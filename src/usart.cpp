@@ -43,17 +43,41 @@ char USART::read(void)
 
 void USART::write(char data)
 {
-	if (data == '\n')
-		write('\r');
 	*_udr = (uint8_t)data;
+
+	if (data == '\n')
+	{
+		write('\r');
+	}
 }
 
 void USART::print(const char str[])
 {
 	for (int i = 0; i < strlen(str); i++)
 	{
+		while (!availableForWrite()) ;
 		write(str[i]);
 	}
+}
+
+void USART::print(int num)
+{
+	char buffer[256];
+	itoa(num, buffer, 10);
+	print(buffer);
+}
+
+void USART::println(const char str[])
+{
+	print(str);
+	while(!availableForWrite()) ;
+	write('\n');
+}
+
+void USART::println(int num)
+{
+	print(num);
+	while(!availableForWrite()) ;
 	write('\n');
 }
 

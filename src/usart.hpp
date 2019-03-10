@@ -3,6 +3,7 @@
 
 #include "quadronecarlos.hpp"
 #include <string.h>
+#include <stdlib.h>
 
 class USART
 {
@@ -41,6 +42,9 @@ class USART
 	char read(void);
 	void write(char data);
 	void print(const char str[]);
+	void print(int num);
+	void println(const char str[]);
+	void println(int num);
 	bool available(void);
 	bool availableForWrite(void);
 };
