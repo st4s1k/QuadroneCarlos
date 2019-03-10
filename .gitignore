@@ -1,4 +1,4 @@
 .vscode/
 .idea/
-obj/*
-hex/*
+obj/
+hex/

@@ -1,0 +1,2 @@
+# Set Group for USBasp
+SUBSYSTEM=="usb", ATTR{idVendor}=="1781", ATTR{idProduct}=="0c9f", GROUP="wheel", MODE="0666"

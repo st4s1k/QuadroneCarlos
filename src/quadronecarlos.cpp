@@ -44,8 +44,18 @@ void loop()
     }
     else if (BT_Serial.availableForWrite())
     {
-        BT_Serial.print("i'm here!\n");
-        blink_delay = 1000;
+	//BT_Serial.print("i'm here!\n");
+	BT_Serial.write('i');
+	BT_Serial.write('\'');
+	BT_Serial.write('m');
+	BT_Serial.write(' ');
+	BT_Serial.write('h');
+	BT_Serial.write('e');
+	BT_Serial.write('r');
+	BT_Serial.write('e');
+	BT_Serial.write('!');
+	BT_Serial.write('\n');
+	blink_delay = 1000;
     }
     else
     {
