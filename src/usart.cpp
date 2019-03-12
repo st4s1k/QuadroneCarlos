@@ -1,6 +1,27 @@
 #include "usart.hpp"
 
-USART::USART(volatile uint8_t *ucsra,
+RingBuff_t Rx_Buffer0;
+RingBuff_t Rx_Buffer1;
+
+USART BT_Serial(&Rx_Buffer0, &UCSR0A, &UCSR0B, &UCSR0C, &UBRR0L, &UDR0,
+                U2X0, UCSZ00, UCSZ01, RXEN0, TXEN0, RXCIE0, RXC0, UDRE0);
+USART Serial1(&Rx_Buffer1, &UCSR1A, &UCSR1B, &UCSR1C, &UBRR1L, &UDR1,
+              U2X1, UCSZ10, UCSZ11, RXEN1, TXEN1, RXCIE1, RXC1, UDRE1);
+
+ISR(USART0_RX_vect)
+{
+	// if (RingBuffer_GetCount(&Rx_Buffer0) < BUFFER_SIZE)
+	// {
+		RingBuffer_Insert(&Rx_Buffer0, UDR0);
+	// }
+	// else
+	// {
+	// 	unsigned dummy_read = UDR0;
+	// }
+}
+
+USART::USART(RingBuff_t *rx_buffer,
+			 volatile uint8_t *ucsra,
 			 volatile uint8_t *ucsrb,
 			 volatile uint8_t *ucsrc,
 			 volatile uint8_t *ubrrl,
@@ -12,7 +33,8 @@ USART::USART(volatile uint8_t *ucsra,
 			 uint8_t txen,
 			 uint8_t rxcie,
 			 uint8_t rxc,
-			 uint8_t udre) : _ucsra(ucsra),
+			 uint8_t udre) : _rx_buffer(rx_buffer),
+			 				 _ucsra(ucsra),
 							 _ucsrb(ucsrb),
 							 _ucsrc(ucsrc),
 							 _ubrrl(ubrrl),
@@ -34,15 +56,39 @@ void USART::begin(int baud)
 
 	*_ucsrc |= (1 << _ucsz1 | 1 << _ucsz0); // cofig URSEL, ASINCORN, PARITY DISABLE, STOPBIT 1, 8 bit data,
 	*_ucsrb |= (1 << _rxen) | (1 << _txen) | (1 << _rxcie);
+
+    RingBuffer_InitBuffer(_rx_buffer);
 }
 
 char USART::read(void)
 {
-	return (char)*_udr;
+	if (RingBuffer_IsEmpty(_rx_buffer))
+		return -1;
+	return RingBuffer_Remove(_rx_buffer);
+}
+
+char *USART::getline(void)
+{
+	RingBuff_Data_t *line = (RingBuff_Data_t *) malloc(sizeof(RingBuff_Data_t) * BUFFER_SIZE);
+	unsigned int itr = 0;
+
+	while (itr < BUFFER_SIZE && !RingBuffer_IsEmpty(_rx_buffer))
+	{
+		line[itr] = RingBuffer_Remove(_rx_buffer);
+		if (line[itr] == (RingBuff_Data_t) '\n' || line[itr] == (RingBuff_Data_t) '\r')
+			break;
+		++itr;
+	}
+
+	line[itr] = '\0';
+
+	return (char *) line;
 }
 
 void USART::write(char data)
 {
+	while (!availableForWrite()) ;
+	
 	*_udr = (uint8_t)data;
 
 	if (data == '\n')
@@ -55,7 +101,6 @@ void USART::print(const char str[])
 {
 	for (int i = 0; i < strlen(str); i++)
 	{
-		while (!availableForWrite()) ;
 		write(str[i]);
 	}
 }
@@ -70,14 +115,12 @@ void USART::print(int num)
 void USART::println(const char str[])
 {
 	print(str);
-	while(!availableForWrite()) ;
 	write('\n');
 }
 
 void USART::println(int num)
 {
 	print(num);
-	while(!availableForWrite()) ;
 	write('\n');
 }
 

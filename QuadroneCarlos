@@ -4,7 +4,7 @@ for var in "$@"
 do
     case $var in
         "compile")
-            avr-g++ -mmcu=atmega328pb -Os src/* -o obj/quadronecarlos.o
+            avr-gcc -mmcu=atmega328pb -I src -Os src/*.cpp -o obj/quadronecarlos.o
         ;;
         "build")
             avr-objcopy -j .text -j .data -O ihex  obj/quadronecarlos.o  hex/quadronecarlos.hex

@@ -7,8 +7,8 @@
 
 #include <avr/io.h>
 #include <avr/iom328pb.h>
+
 #include <util/delay.h>
-#include "usart.hpp"
 
 #define HIGH 1
 #define LOW !HIGH

@@ -1,13 +1,18 @@
 #ifndef _USART_HPP
 #define _USART_HPP
 
-#include "quadronecarlos.hpp"
 #include <string.h>
 #include <stdlib.h>
+#include <avr/interrupt.h>
+
+#include "LightweightRingBuff.h"
+#include "quadronecarlos.hpp"
 
 class USART
 {
   private:
+	RingBuff_t *const _rx_buffer;
+
 	volatile uint8_t *const _ucsra;
 	volatile uint8_t *const _ucsrb;
 	volatile uint8_t *const _ucsrc;
@@ -24,7 +29,8 @@ class USART
 	uint8_t const _udre;
 
   public:
-	USART(volatile uint8_t *ucsra,
+	USART(RingBuff_t *rx_buffer,
+		  volatile uint8_t *ucsra,
 		  volatile uint8_t *ucsrb,
 		  volatile uint8_t *ucsrc,
 		  volatile uint8_t *ubrrl,
@@ -40,6 +46,7 @@ class USART
 
 	void begin(int baud);
 	char read(void);
+	char *getline(void);
 	void write(char data);
 	void print(const char str[]);
 	void print(int num);
@@ -48,5 +55,13 @@ class USART
 	bool available(void);
 	bool availableForWrite(void);
 };
+
+extern RingBuff_t	Rx_Buffer0;
+
+extern RingBuff_t	Rx_Buffer1;
+
+extern USART BT_Serial;
+
+extern USART Serial1;
 
 #endif
