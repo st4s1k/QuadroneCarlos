@@ -1,5 +1,10 @@
 #include "usart.hpp"
 
+ISR(USART0_RX_vect)
+{
+	RingBuffer_Insert(&Buffer0, UDR0);
+}
+
 USART::USART(volatile uint8_t *ucsra,
 			 volatile uint8_t *ucsrb,
 			 volatile uint8_t *ucsrc,

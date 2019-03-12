@@ -2,12 +2,6 @@
 
 /* User variables BEGIN */
 
-USART BT_Serial(&UCSR0A, &UCSR0B, &UCSR0C, &UBRR0L, &UDR0,
-                U2X0, UCSZ00, UCSZ01, RXEN0, TXEN0, RXCIE0, RXC0, UDRE0);
-
-// USART Serial1(&UCSR1A, &UCSR1B, &UCSR1C, &UBRR1L, &UDR1,
-//                  U2X1, UCSZ10, UCSZ11, RXEN1, TXEN1, RXCIE1, RXC1, UDRE1);
-
 bool blink = true;
 
 /* User variables END */
@@ -21,6 +15,8 @@ void setup()
     pinMode(PORTD, PIND4, OUTPUT);
 
     clear_bit(PORTD, PIND4);
+
+    RingBuffer_InitBuffer(&Buffer0);
 
     /* User code END */
 }
@@ -37,7 +33,7 @@ void loop()
     {
         BT_Serial.write(BT_Serial.read());
 	
-	blink = true;
+	    blink = true;
         blink_delay = 200;
     }
     else
