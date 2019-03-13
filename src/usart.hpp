@@ -44,9 +44,9 @@ class USART
 		  uint8_t rxc,
 		  uint8_t udre);
 
-	void begin(int baud);
+	void begin(long baud);
 	char read(void);
-	char *getline(void);
+	char *readln(void);
 	void write(char data);
 	void print(const char str[]);
 	void print(int num);

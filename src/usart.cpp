@@ -5,11 +5,15 @@ RingBuff_t Rx_Buffer1;
 
 USART BT_Serial(&Rx_Buffer0, &UCSR0A, &UCSR0B, &UCSR0C, &UBRR0L, &UDR0,
                 U2X0, UCSZ00, UCSZ01, RXEN0, TXEN0, RXCIE0, RXC0, UDRE0);
+
+/*
 USART Serial1(&Rx_Buffer1, &UCSR1A, &UCSR1B, &UCSR1C, &UBRR1L, &UDR1,
               U2X1, UCSZ10, UCSZ11, RXEN1, TXEN1, RXCIE1, RXC1, UDRE1);
+*/
 
 ISR(USART0_RX_vect)
 {
+	// BT_Serial.write((char) UDR0);
 	// if (RingBuffer_GetCount(&Rx_Buffer0) < BUFFER_SIZE)
 	// {
 		RingBuffer_Insert(&Rx_Buffer0, UDR0);
@@ -48,8 +52,10 @@ USART::USART(RingBuff_t *rx_buffer,
 							 _rxc(rxc),
 							 _udre(udre) {}
 
-void USART::begin(int baud)
+void USART::begin(long baud)
 {
+	cli();
+
 	*_ucsra |= (1 << _u2x); // dublam viteza de transmitere USART
 
 	*_ubrrl = (F_CPU / (8L * baud)) - 1; // Asynchronous x2 speed mode
@@ -58,16 +64,21 @@ void USART::begin(int baud)
 	*_ucsrb |= (1 << _rxen) | (1 << _txen) | (1 << _rxcie);
 
     RingBuffer_InitBuffer(_rx_buffer);
+
+    sei();
 }
 
 char USART::read(void)
 {
-	if (RingBuffer_IsEmpty(_rx_buffer))
+	if (RingBuffer_IsEmpty(_rx_buffer)) {
+		println("Buffer is empty!");
 		return -1;
+	}
+	println("Buffer is not empty!");
 	return RingBuffer_Remove(_rx_buffer);
 }
 
-char *USART::getline(void)
+char *USART::readln(void)
 {
 	RingBuff_Data_t *line = (RingBuff_Data_t *) malloc(sizeof(RingBuff_Data_t) * BUFFER_SIZE);
 	unsigned int itr = 0;

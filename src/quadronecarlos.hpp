@@ -10,20 +10,23 @@
 
 #include <util/delay.h>
 
+#include "usart.hpp"
+#include "timer.hpp"
+
 #define HIGH 1
 #define LOW !HIGH
 #define OUTPUT HIGH
 #define INPUT !OUTPUT
 
-#define bit(pin) (1 << (pin))
-
 #define set_bits(port, pins) ((port) |= (pins))
 
 #define clear_bits(port, pins) ((port) &= (~pins))
 
-#define set_bit(port, pin) (set_bits((port), bit((pin))))
+#define set_bit(port, pin) (set_bits((port), _BV((pin))))
 
-#define clear_bit(port, pin) (clear_bits((port), bit((pin))))
+#define clear_bit(port, pin) (clear_bits((port), _BV((pin))))
+
+#define toggle_bit(port, pin) ((port) ^= _BV((pin)))
 
 #define bits_are_set(port, pins) (((port) & (pins)) == (pins))
 

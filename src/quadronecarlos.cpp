@@ -1,7 +1,8 @@
 #include "quadronecarlos.hpp"
-#include "usart.hpp"
 
 /* User variables BEGIN */
+
+unsigned long prevTime = 0;
 
 /* User variables END */
 
@@ -24,6 +25,8 @@ void loop()
 
     int blink_delay;
 
+    unsigned long curTime = millis();
+
     if (BT_Serial.available())
     {
         BT_Serial.write(BT_Serial.read());
@@ -32,40 +35,32 @@ void loop()
     }
     else
     {
-        BT_Serial.print("i'm here! rand = ");
+        BT_Serial.print(prevTime);
+        BT_Serial.println(curTime);
+
+        // BT_Serial.print("i'm here! rand = ");
         // BT_Serial.println(strlen("i'm here!"));
-        BT_Serial.println((int) rand() % 10);
+        // BT_Serial.println((int) rand() % 10);
 
         blink_delay = 1000;
     }
 
-    set_bit(PORTD, PIND4);
-    switch (blink_delay)
-    {
-    case 200:
-        _delay_ms(200);
-        break;
-    case 1000:
-        _delay_ms(1000);
-        break;
-    }
-
-    clear_bit(PORTD, PIND4);
-    switch (blink_delay)
-    {
-    case 200:
-        _delay_ms(200);
-        break;
-    case 1000:
-        _delay_ms(1000);
-        break;
-    }
+    if (curTime - prevTime >= blink_delay) {
+        toggle_bit(PORTD, PIND4);
+        prevTime = curTime;
+    }    
 
     /* User code END */
 }
 
 int main(void)
 {
+    // this combination is for the standard 168/328/1280/2560
+    set_bit(TCCR0B, CS01);
+    // enable timer 0 overflow interrupt
+    set_bit(TCCR0B, CS00);
+    set_bit(TIMSK0, TOIE0);
+
     setup();
 
     while (true)
