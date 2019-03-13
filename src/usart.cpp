@@ -4,7 +4,7 @@ RingBuff_t Rx_Buffer0;
 RingBuff_t Rx_Buffer1;
 
 USART BT_Serial(&Rx_Buffer0, &UCSR0A, &UCSR0B, &UCSR0C, &UBRR0L, &UDR0,
-                U2X0, UCSZ00, UCSZ01, RXEN0, TXEN0, RXCIE0, RXC0, UDRE0);
+				U2X0, UCSZ00, UCSZ01, RXEN0, TXEN0, RXCIE0, RXC0, UDRE0);
 
 /*
 USART Serial1(&Rx_Buffer1, &UCSR1A, &UCSR1B, &UCSR1C, &UBRR1L, &UDR1,
@@ -13,15 +13,12 @@ USART Serial1(&Rx_Buffer1, &UCSR1A, &UCSR1B, &UCSR1C, &UBRR1L, &UDR1,
 
 ISR(USART0_RX_vect)
 {
-	// BT_Serial.write((char) UDR0);
-	// if (RingBuffer_GetCount(&Rx_Buffer0) < BUFFER_SIZE)
-	// {
+	cli();
+	if (!RingBuffer_IsFull(&Rx_Buffer0))
+	{
 		RingBuffer_Insert(&Rx_Buffer0, UDR0);
-	// }
-	// else
-	// {
-	// 	unsigned dummy_read = UDR0;
-	// }
+	}
+	sei();
 }
 
 USART::USART(RingBuff_t *rx_buffer,
@@ -38,7 +35,7 @@ USART::USART(RingBuff_t *rx_buffer,
 			 uint8_t rxcie,
 			 uint8_t rxc,
 			 uint8_t udre) : _rx_buffer(rx_buffer),
-			 				 _ucsra(ucsra),
+							 _ucsra(ucsra),
 							 _ucsrb(ucsrb),
 							 _ucsrc(ucsrc),
 							 _ubrrl(ubrrl),
@@ -63,43 +60,57 @@ void USART::begin(long baud)
 	*_ucsrc |= (1 << _ucsz1 | 1 << _ucsz0); // cofig URSEL, ASINCORN, PARITY DISABLE, STOPBIT 1, 8 bit data,
 	*_ucsrb |= (1 << _rxen) | (1 << _txen) | (1 << _rxcie);
 
-    RingBuffer_InitBuffer(_rx_buffer);
+	RingBuffer_InitBuffer(_rx_buffer);
 
-    sei();
+	sei();
 }
 
 char USART::read(void)
 {
-	if (RingBuffer_IsEmpty(_rx_buffer)) {
+	if (RingBuffer_IsEmpty(_rx_buffer))
+	{
 		println("Buffer is empty!");
 		return -1;
 	}
-	println("Buffer is not empty!");
+	// println("Buffer is not empty!");
 	return RingBuffer_Remove(_rx_buffer);
 }
 
 char *USART::readln(void)
 {
-	RingBuff_Data_t *line = (RingBuff_Data_t *) malloc(sizeof(RingBuff_Data_t) * BUFFER_SIZE);
-	unsigned int itr = 0;
+	cli();
+
+	RingBuff_Count_t itr = 0;
 
 	while (itr < BUFFER_SIZE && !RingBuffer_IsEmpty(_rx_buffer))
 	{
-		line[itr] = RingBuffer_Remove(_rx_buffer);
-		if (line[itr] == (RingBuff_Data_t) '\n' || line[itr] == (RingBuff_Data_t) '\r')
-			break;
+		line[itr] = read();
+		if ('\n' == (char)line[itr] || '\r' == (char)line[itr])
+		{
+			if (itr == 0)
+			{
+				continue;
+			}
+			else
+			{
+				break;
+			}
+		}
 		++itr;
 	}
 
 	line[itr] = '\0';
 
-	return (char *) line;
+	sei();
+
+	return (char *)line;
 }
 
 void USART::write(char data)
 {
-	while (!availableForWrite()) ;
-	
+	while (!availableForWrite())
+		;
+
 	*_udr = (uint8_t)data;
 
 	if (data == '\n')
@@ -108,7 +119,7 @@ void USART::write(char data)
 	}
 }
 
-void USART::print(const char str[])
+void USART::print(const char *str)
 {
 	for (int i = 0; i < strlen(str); i++)
 	{
@@ -123,7 +134,7 @@ void USART::print(int num)
 	print(buffer);
 }
 
-void USART::println(const char str[])
+void USART::println(const char *str)
 {
 	print(str);
 	write('\n');

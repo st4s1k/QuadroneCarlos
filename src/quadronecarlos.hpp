@@ -10,8 +10,8 @@
 
 #include <util/delay.h>
 
-#include "usart.hpp"
 #include "timer.hpp"
+#include "usart.hpp"
 
 #define HIGH 1
 #define LOW !HIGH

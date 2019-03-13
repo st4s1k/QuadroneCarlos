@@ -12,6 +12,7 @@ class USART
 {
   private:
 	RingBuff_t *const _rx_buffer;
+	RingBuff_Data_t line[BUFFER_SIZE];
 
 	volatile uint8_t *const _ucsra;
 	volatile uint8_t *const _ucsrb;
@@ -48,17 +49,17 @@ class USART
 	char read(void);
 	char *readln(void);
 	void write(char data);
-	void print(const char str[]);
+	void print(const char *str);
 	void print(int num);
-	void println(const char str[]);
+	void println(const char *str);
 	void println(int num);
 	bool available(void);
 	bool availableForWrite(void);
 };
 
-extern RingBuff_t	Rx_Buffer0;
+extern RingBuff_t Rx_Buffer0;
 
-extern RingBuff_t	Rx_Buffer1;
+extern RingBuff_t Rx_Buffer1;
 
 extern USART BT_Serial;
 
