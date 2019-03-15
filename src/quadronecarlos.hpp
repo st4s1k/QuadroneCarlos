@@ -18,6 +18,11 @@
 #define OUTPUT HIGH
 #define INPUT !OUTPUT
 
+#define MS 1L
+#define SEC 1000 * MS
+#define MIN 60 * SEC
+#define HR 60 * MIN
+
 #define set_bits(port, pins) ((port) |= (pins))
 
 #define clear_bits(port, pins) ((port) &= (~pins))
@@ -34,8 +39,10 @@
 
 #define bit_is_val(port, pin) (((port) >> (pin)) & 1)
 
-#define pinMode(port, pin, mode) ((mode) == OUTPUT ? set_bit((port), (pin)) : clear_bit((port), (pin)))
+#define pinMode(port, pin, mode) \
+    ((mode) == OUTPUT ? set_bit((port), (pin)) : clear_bit((port), (pin)))
 
-#define portMode(port, mode) ((mode) == OUTPUT ? set_bits((port), 0xFF) : clear_bits((port), 0xFF))
+#define portMode(port, mode) \
+    ((mode) == OUTPUT ? set_bits((port), 0xFF) : clear_bits((port), 0xFF))
 
 #endif

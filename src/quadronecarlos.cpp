@@ -1,13 +1,20 @@
 #include "quadronecarlos.hpp"
+#include <ctype.h>
 
-/* User variables BEGIN */
+/* User defined variables BEGIN */
 
-unsigned long prevTime = 0;
+int blink_delay = 1 * SEC;
+unsigned long prevTime[2];
 
-/* User variables END */
+/* User defined variables END */
 
-void setup()
-{
+/* User defined function prototypes BEGIN */
+
+bool isnum(char *str);
+
+/* User defined function prototypes END */
+
+void setup() {
     cli();
 
     /* User code BEGIN */
@@ -23,72 +30,50 @@ void setup()
     sei();
 }
 
-void loop()
-{
+void loop() {
     /* User code BEGIN */
-
-    int blink_delay;
 
     unsigned long curTime = millis();
 
     char *ln = BT_Serial.readln();
 
-    if (strlen(ln))
-    {
+    if (strlen(ln)) {
         BT_Serial.println(ln);
-    }
-
-    // if (RingBuffer_IsEmpty(&Rx_Buffer0))
-    // {
-    //     BT_Serial.println("Rx_Buffer0 is empty.");
-    // }
-    // else
-    // {
-    //     for (int i = 0; i < BUFFER_SIZE; i++)
-    //     {
-    //         BT_Serial.write((char) Rx_Buffer0.Buffer[i]);
-    //     }
-    //     BT_Serial.write('\n');
-    // }
-
-    if (BT_Serial.available())
-    {
-        for (int i = 0; i < BUFFER_SIZE; i++)
-        {
-            BT_Serial.write(Rx_Buffer0.Buffer[i]);
+        if (isnum(ln)) {
+            int val = atoi(ln);
+            if (val >= 0) {
+                blink_delay = val;
+            }
         }
-
-        blink_delay = 200;
-    }
-    else
-    {
-        blink_delay = 1000;
-        // BT_Serial.print("i'm here! rand = ");
-        // BT_Serial.println(strlen("i'm here!"));
-        // BT_Serial.println((int) rand() % 10);
     }
 
-    BT_Serial.print(prevTime);
-    BT_Serial.write('\t');
-    BT_Serial.println(curTime);
-
-    if (curTime - prevTime >= blink_delay)
-    {
+    if (curTime - prevTime[0] >= blink_delay) {
         toggle_bit(PORTD, PIND4);
-        prevTime = curTime;
+        prevTime[0] = curTime;
     }
 
     /* User code END */
 }
 
-int main(void)
-{
+/* User defined function implementations BEGIN */
+
+bool isnum(char *str) {
+    for (int i = 0; i < strlen(str); i++) {
+        if (!isdigit(str[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* User defined function implementations END */
+
+int main(void) {
     TIMER0_Init();
 
     setup();
 
-    while (true)
-    {
+    while (true) {
         loop();
     }
 
