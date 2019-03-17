@@ -11,12 +11,18 @@ USART Serial1(&Rx_Buffer1, &UCSR1A, &UCSR1B, &UCSR1C, &UBRR1L, &UDR1,
               U2X1, UCSZ10, UCSZ11, RXEN1, TXEN1, RXCIE1, RXC1, UDRE1);
 */
 
+uint8_t ln_cnt = 0;
+
 ISR(USART0_RX_vect) {
     cli();
+    uint8_t data = UDR0;
     if (!RingBuffer_IsFull(&Rx_Buffer0)) {
-        RingBuffer_Insert(&Rx_Buffer0, UDR0);
-    } else {
-        uint8_t dummy_data = UDR0;
+        if (data == '\n') {
+            ++ln_cnt;
+        } else if (data == '\r') {
+            data = '\n';
+        }
+        RingBuffer_Insert(&Rx_Buffer0, data);
     }
     sei();
 }
@@ -71,7 +77,10 @@ char *USART::readln(void) {
 
     while (itr < BUFFER_SIZE && !RingBuffer_IsEmpty(_rx_buffer)) {
         line[itr] = read();
-        if ('\n' == (char)line[itr] || '\r' == (char)line[itr]) {
+        if ('\n' == (char)line[itr]) {
+            if (ln_cnt > 0) {
+                --ln_cnt;
+            }
             if (itr == 0) {
                 continue;
             } else {
@@ -121,6 +130,10 @@ void USART::println(int num) {
     write('\n');
 }
 
-bool USART::available(void) { return *_ucsra & (1 << _rxc); }
+bool USART::available(void) {
+    return ln_cnt > 0;
+    // return !RingBuffer_IsEmpty(_rx_buffer);
+    // return *_ucsra & (1 << _rxc);
+}
 
 bool USART::availableForWrite(void) { return *_ucsra & (1 << _udre); }

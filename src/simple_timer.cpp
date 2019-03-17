@@ -1,5 +1,7 @@
 #include "simple_timer.hpp"
 
+#include <avr/interrupt.h>
+
 volatile unsigned long ms = 0;
 
 ISR(TIMER0_COMPA_vect) {

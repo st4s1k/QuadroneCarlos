@@ -1,12 +1,11 @@
 #ifndef _USART_HPP
 #define _USART_HPP
 
-#include <avr/interrupt.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "LightweightRingBuff.h"
 #include "quadronecarlos.hpp"
+
+#include <stdlib.h>
+#include <string.h>
 
 class USART {
    private:
