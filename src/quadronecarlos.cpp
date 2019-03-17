@@ -1,5 +1,9 @@
 #include "quadronecarlos.hpp"
+
+#include <util/delay.h>
 #include <ctype.h>
+#include "simple_timer.hpp"
+#include "usart.hpp"
 
 /* User defined variables BEGIN */
 
