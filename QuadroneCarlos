@@ -4,9 +4,11 @@ for var in "$@"
 do
     case $var in
         "compile")
-            avr-g++ -mmcu=atmega328pb -Os src/* -o obj/quadronecarlos.o
+            mkdir obj &> /dev/null
+            avr-g++ -mmcu=atmega328pb -I src/ -Os src/*.c -Os src/*.cpp -o obj/quadronecarlos.o
         ;;
         "build")
+            mkdir hex &> /dev/null
             avr-objcopy -j .text -j .data -O ihex  obj/quadronecarlos.o  hex/quadronecarlos.hex
         ;;
         "upload")
@@ -16,7 +18,7 @@ do
             avr-size hex/quadronecarlos.hex
         ;;
         "clean")
-            rm -rf obj/* hex/*
+            rm -rf obj/ hex/ &> /dev/null
         ;;
         "all")
             $0 compile build
