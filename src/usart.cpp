@@ -50,13 +50,16 @@ USART::USART(RingBuff_t *rx_buffer, volatile uint8_t *ucsra,
 void USART::begin(long baud) {
     cli();
 
-    *_ucsra |= (1 << _u2x);  // dublam viteza de transmitere USART
+    set_bit(*_ucsra, _u2x); // dublam viteza de transmitere USART
 
-    *_ubrrl = (F_CPU / (8L * baud)) - 1;  // Asynchronous x2 speed mode
+    *_ubrrl = (F_CPU / (8UL * baud)) - 1UL; // Asynchronous x2 speed mode
 
-    *_ucsrc |= (1 << _ucsz1 | 1 << _ucsz0);  // cofig URSEL, ASINCORN, PARITY
-                                             // DISABLE, STOPBIT 1, 8 bit data,
-    *_ucsrb |= (1 << _rxen) | (1 << _txen) | (1 << _rxcie);
+    set_bit(*_ucsrc, _ucsz1); // cofig URSEL, ASINCORN, PARITY
+    set_bit(*_ucsrc, _ucsz0); // DISABLE, STOPBIT 1, 8 bit data,
+    
+    set_bit(*_ucsrb, _rxen);
+    set_bit(*_ucsrb, _txen);
+    set_bit(*_ucsrb, _rxcie);
 
     RingBuffer_InitBuffer(_rx_buffer);
 
@@ -132,8 +135,6 @@ void USART::println(int num) {
 
 bool USART::available(void) {
     return ln_cnt > 0;
-    // return !RingBuffer_IsEmpty(_rx_buffer);
-    // return *_ucsra & (1 << _rxc);
 }
 
 bool USART::availableForWrite(void) { return *_ucsra & (1 << _udre); }

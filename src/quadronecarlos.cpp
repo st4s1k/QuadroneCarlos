@@ -8,38 +8,32 @@
 
 /* User defined variables BEGIN */
 
-int blink_delay = 1 * SEC;
-unsigned long prevTime[2];
-
 /* User defined variables END */
 
 /* User defined function prototypes BEGIN */
 
 bool isnum(char *str);
+bool isprefix(const char *pre, const char *str);
 
 /* User defined function prototypes END */
 
-void setup() {
+inline void setup() {
     cli();
 
     /* User code BEGIN */
+    TIMER0_Init_PWM();
+    TIMER1_Init_PWM();
 
     BT_Serial.begin(9600);
     // setupMPU();
-
-    pinMode(PORTD, PIND4, OUTPUT);
-
-    clear_bit(PORTD, PIND4);
 
     /* User code END */
 
     sei();
 }
 
-void loop() {
+inline void loop() {
     /* User code BEGIN */
-
-    unsigned long curTime = millis();
 
     char *ln;
 
@@ -48,18 +42,49 @@ void loop() {
     }
 
     if (strlen(ln)) {
-        BT_Serial.println(ln);
-        if (isnum(ln)) {
-            int val = atoi(ln);
-            if (val >= 0) {
-                blink_delay = val;
+        if (isprefix("PROP", ln)) {
+            if (isnum(ln + 6)) {
+                int val = atoi(ln + 6);  // cmd: PROPn_val
+                if (val >= 0) {
+                    BT_Serial.print("Value: ");
+                    BT_Serial.println(val);
+                    if (val <= 0xFF) {
+                        switch (*(ln + 4)) {
+                            case '1':
+                                OCR0A = val;
+                                BT_Serial.print("OCR0A: ");
+                                BT_Serial.println(OCR0A);
+                                break;
+                            case '2':
+                                OCR0B = val;
+                                BT_Serial.print("OCR0B: ");
+                                BT_Serial.println(OCR0B);
+                                break;
+                            case '3':
+                                OCR1A = val;
+                                BT_Serial.print("OCR1A: ");
+                                BT_Serial.println(OCR1A);
+                                break;
+                            case '4':
+                                OCR1B = val;
+                                BT_Serial.print("OCR1B: ");
+                                BT_Serial.println(OCR1B);
+                                break;
+                            default:
+                                BT_Serial.print("Bad syntax!");
+                        }
+                    } else {
+                        BT_Serial.print("Value not in range 0-255");
+                    }
+                } else {
+                    BT_Serial.print("Negative values are forbidden");
+                }
+            } else {
+                BT_Serial.print("Value not a number");
             }
+        } else {
+            BT_Serial.println(ln);
         }
-    }
-
-    if (curTime - prevTime[0] >= blink_delay) {
-        toggle_bit(PORTD, PIND4);
-        prevTime[0] = curTime;
     }
 
     // if (curTime - prevTime[1] >= 100) {
@@ -87,7 +112,7 @@ void loop() {
 
 /* User defined function implementations BEGIN */
 
-bool isnum(char *str) {
+inline bool isnum(char *str) {
     for (int i = 0; i < strlen(str); i++) {
         if (!isdigit(str[i])) {
             return false;
@@ -96,15 +121,38 @@ bool isnum(char *str) {
     return true;
 }
 
+inline bool isprefix(const char *pre, const char *str) {
+    size_t lenpre = strlen(pre);
+    size_t lenstr = strlen(str);
+
+    return lenstr < lenpre ? false : strncmp(pre, str, lenpre) == 0;
+}
+
 /* User defined function implementations END */
 
 int main(void) {
-    TIMER0_Init();
+    // int blink_period = 1 * SEC;
+    // unsigned long prevTime[2];
 
     setup();
 
+    /* RED LED SETTINGS */
+    // set_bit(DDRD, DDD4);
+    // set PD4 as ouptut (RED LED)
+    // clear_bit(PORTD, PIND4);
+    // initialize PD4 with LOW
+
     while (true) {
         loop();
+
+        // int curTime = millis();
+
+        // if (curTime - prevTime[0] >= blink_period / 2) {
+        //     toggle_bit(PORTD, PIND4);
+        //     prevTime[0] = curTime;
+        // } else if (curTime == 0) {
+        //     BT_Serial.println("Timer ZERO.");
+        // }
     }
 
     return 0;

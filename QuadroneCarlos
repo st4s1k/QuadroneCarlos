@@ -3,44 +3,44 @@
 for var in "$@"
 do
     case $var in
-        "compile")
+        compile|c)
             mkdir obj &> /dev/null
             avr-g++ -mmcu=atmega328pb -I src/ -Os src/*.c -Os src/*.cpp -o obj/quadronecarlos.o
         ;;
-        "build")
+        build|b)
             mkdir hex &> /dev/null
             avr-objcopy -j .text -j .data -O ihex  obj/quadronecarlos.o  hex/quadronecarlos.hex
         ;;
-        "upload")
+        upload|u)
             avrdude -c usbtiny -p m328pb -P usb -U flash:w:hex/quadronecarlos.hex
         ;;
-        "size")
+        size|s)
             avr-size hex/quadronecarlos.hex
         ;;
-        "clean")
+        clean|C)
             rm -rf obj/ hex/ &> /dev/null
         ;;
-        "all")
+        all|a)
             $0 compile build
         ;;
-        "re")
+        re|r)
             $0 clean all
         ;;
-        "help")
+        help|h)
             printf "QuadroneCarlos v1.0\n\n"
             
             printf "Usage:\n"
-            printf "\t%s [argument]\n\n" $0
+            printf "            %s [argument]\n\n" $0
             
             printf "Arguments:\n"
-            printf "\t help\t-\t open current help view\n"
-            printf "\t compile\t-\t generate object files\n"
-            printf "\t build\t-\t generate hex file\n"
-            printf "\t upload\t-\t ...\n"
-            printf "\t size\t-\t ...\n"
-            printf "\t clean\t-\t delete all object and hex files\n"
-            printf "\t all\t-\t compile & build\n"
-            printf "\tre\t-\t clean & all\n\n"
+            printf "            help       - open current help view\n"
+            printf "            compile    - generate object files\n"
+            printf "            build      - generate hex file\n"
+            printf "            upload     - write hex file to MCU memory\n"
+            printf "            size       - displays the sizes of sections inside hex file\n"
+            printf "            clean      - delete all objects and hex files\n"
+            printf "            all        - compile & build\n"
+            printf "            re         - clean & all\n\n"
         ;;
         *)
             printf "Bad argument: %s" $var
