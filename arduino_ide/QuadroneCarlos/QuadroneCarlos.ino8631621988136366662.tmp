@@ -1,0 +1,75 @@
+
+#include <MPU6050_tockn.h>
+#include <Wire.h>
+
+#include <MadgwickAHRS.h>
+
+MPU6050 mpu(Wire);
+
+long timer = 0;
+
+double angleX, angleY, angleZ;
+
+void toEulerAngle(volatile float *_q0,
+                  volatile float *_q1,
+                  volatile float *_q2,
+                  volatile float *_q3,
+                  double *roll,
+                  double *pitch,
+                  double *yaw)
+{
+  // roll (x-axis rotation)
+  double sinr_cosp = +2.0 * (*_q0 * *_q1 + *_q2 * *_q3);
+  double cosr_cosp = +1.0 - 2.0 * (*_q1 * *_q1 + *_q2 * *_q2);
+  *roll = atan2(sinr_cosp, cosr_cosp);
+
+  // pitch (y-axis rotation)
+  double sinp = +2.0 * (*_q0 * *_q2 - *_q3 * *_q1);
+  if (fabs(sinp) >= 1)
+    *pitch = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+  else
+    *pitch = asin(sinp);
+
+  // yaw (z-axis rotation)
+  double siny_cosp = +2.0 * (*_q0 * *_q3 + *_q1 * *_q2);
+  double cosy_cosp = +1.0 - 2.0 * (*_q2 * *_q2 + *_q3 * *_q3);
+  *yaw = atan2(siny_cosp, cosy_cosp);
+}
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+  Wire.setClock(400000);
+  mpu.begin();
+  mpu.calcGyroOffsets(true);
+}
+
+void loop() {
+  mpu.update();
+
+  MadgwickAHRSupdateIMU(mpu.getGyroX(),
+                        mpu.getGyroY(),
+                        mpu.getGyroZ(),
+                        mpu.getAccX(),
+                        mpu.getAccY(),
+                        mpu.getAccZ());
+
+  toEulerAngle(&q3, &q1, &q2, &q0, &angleX, &angleY, &angleZ);
+
+  if (millis() - timer > 100) {
+//    Serial.print("gyroX: ");    Serial.print(mpu.getGyroX());
+//    Serial.print("\tgyroY: ");  Serial.print(mpu.getGyroY());
+//    Serial.print("\tgyroZ: ");  Serial.println(mpu.getGyroZ());
+
+    Serial.print("accX: ");   Serial.print(mpu.getAccX());
+    Serial.print("\taccY: ");    Serial.print(mpu.getAccY());
+    Serial.print("\taccZ: ");    Serial.println(mpu.getAccZ());
+
+//    Serial.print("angleX: "); Serial.print(degrees(angleX));
+//    Serial.print("\tangleY: "); Serial.print(degrees(angleY));
+//    Serial.print("\tangleZ: "); Serial.println(degrees(angleZ));
+    timer = millis();
+  }
+
+  delay(2);
+}
