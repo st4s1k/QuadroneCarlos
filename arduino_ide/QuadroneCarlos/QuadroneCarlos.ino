@@ -178,6 +178,19 @@ void loop(void) {
   pitch = mpu.getAngleY() - pitch_offset;
   yaw   = mpu.getAngleZ() - yaw_offset;
 
+  //  if (millis() - timer[0] > 100) {
+  //
+  //    //    Serial.print("\t");
+  //    //    Serial.print(thrust);
+  //    Serial.print(roll);
+  //    Serial.print("\t");
+  //    Serial.print(pitch);
+  //    Serial.print("\t");
+  //    Serial.println(yaw);
+  //
+  //    timer[2] = millis();
+  //  }
+
   remoteControl();
 
   stabilization();

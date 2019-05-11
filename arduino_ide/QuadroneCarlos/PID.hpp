@@ -5,15 +5,24 @@ class PID {
 
   private:
 
-    const int _in_min, _in_max, _out_min, _out_max;
+    int _in_min,
+        _in_max,
+        _out_min,
+        _out_max;
 
-    float _k_p, _k_i, _k_d;
+    float _k_p,
+          _k_i,
+          _k_d;
 
-    int err, last_err, delta_err;
+    int err,
+        last_err,
+        delta_err;
 
     int P, I, D;
 
-    unsigned long current_time, previous_time, elapsed_time;
+    unsigned long current_time,
+             previous_time,
+             elapsed_time;
 
   public:
 
@@ -32,62 +41,43 @@ class PID {
       _out_min(out_min),
       _out_max(out_max) { }
 
-    int evaluate(int y, int r) {
+    int evaluate(int input, int reference) {
 
-      err = r - y;
+      err = reference - input;
 
       delta_err = err - last_err;
 
-      current_time = millis();
-
-      elapsed_time = current_time - previous_time;
-
-      if (elapsed_time) {
-
-        P  = _k_p * (float)err;
-
-        if (_k_i) {
-          I += _k_i * (float)err / (float)elapsed_time;
-        } else {
-          I = 0;
-        }
-
-        D  = _k_d * (float)delta_err / (float)elapsed_time;
-
-      }
-
-      previous_time = current_time;
+      int output = evaluate(delta_err);
 
       last_err = err;
 
-      return constrain(map(P + I + D, _in_min, _in_max, _out_min, _out_max), _out_min, _out_max);
+      return output;
     }
 
-    int evaluate(int y, int r, int delta_err) {
+    int evaluate(int input, int reference, int delta_err) {
 
-      err = r - y;
+      err = reference - input;
+
+      return evaluate(delta_err);
+    }
+
+    int evaluate(int delta_err) {
 
       current_time = millis();
-
       elapsed_time = current_time - previous_time;
-
-      if (elapsed_time) {
-
-        P  = _k_p * (float)err;
-
-        if (_k_i) {
-          I = constrain(I + (_k_i * (float)err * (float)elapsed_time), _in_min, _in_max);
-        } else {
-          I = 0;
-        }
-
-        D  = _k_d * (float)delta_err / (float)elapsed_time;
-
-      }
-
       previous_time = current_time;
 
-      return constrain(map(P + I + D, _in_min, _in_max, _out_min, _out_max), _out_min, _out_max);
+      if (elapsed_time) {
+        P = _k_p * (float)err;
+        I = _k_i == 0 ? 0 : constrain(I + (_k_i * (float)err * (float)elapsed_time), _in_min, _in_max);
+        D = _k_d * (float)delta_err / (float)elapsed_time;
+      }
+
+      return constrain(
+               map(P + I + D, _in_min, _in_max, _out_min, _out_max),
+               _out_min,
+               _out_max
+             );
     }
 
     void reset(void) {
