@@ -14,6 +14,10 @@
 #define MPU6050_TEMP_H       0x41
 #define MPU6050_TEMP_L       0x42
 
+#define MPU6050_ACCEL_H      0x3B
+#define MPU6050_GYRO_H       0x43
+#define MPU6050_DATA_BEGIN   MPU6050_ACCEL_H
+
 class MPU6050{
   public:
 
@@ -23,6 +27,7 @@ class MPU6050{
   void begin();
 
   void setGyroOffsets(float x, float y, float z);
+  void setAccelOffsets(float x, float y, float z);
 
   void writeMPU6050(byte reg, byte data);
   byte readMPU6050(byte reg);
@@ -47,11 +52,15 @@ class MPU6050{
   float getGyroY(){ return gyroY; };
   float getGyroZ(){ return gyroZ; };
 
-	void calcGyroOffsets(bool console = false, uint16_t delayBefore = 5000, uint16_t delayAfter = 3000);
+  void calcOffsets(bool console = true, uint16_t iterations = 3000, uint16_t delayBefore = 3000, uint16_t delayAfter = 1000);
 
   float getGyroXoffset(){ return gyroXoffset; };
   float getGyroYoffset(){ return gyroYoffset; };
   float getGyroZoffset(){ return gyroZoffset; };
+
+  float getAccelXoffset(){ return accelXoffset; };
+  float getAccelYoffset(){ return accelYoffset; };
+  float getAccelZoffset(){ return accelZoffset; };
 
   void update();
 
@@ -74,6 +83,7 @@ class MPU6050{
   rawGyroX, rawGyroY, rawGyroZ;
 
   float gyroXoffset, gyroYoffset, gyroZoffset;
+  float accelXoffset, accelYoffset, accelZoffset;
 
   float temp, accX, accY, accZ, gyroX, gyroY, gyroZ;
 

@@ -123,39 +123,7 @@ void setup(void) {
   mpu.begin();
 
   Serial.print("*T");
-  Serial.println("\nCalibrating angles in:");
-  delay(500);
-  Serial.println("3...");
-  delay(1000);
-  Serial.println("2...");
-  delay(1000);
-  Serial.println("1...");
-  delay(1000);
-  Serial.println("*");
-
-  for (int i = 0; i < 1000; i++) {
-    mpu.update();
-    roll_offset  += mpu.getAngleX();
-    pitch_offset += mpu.getAngleY();
-    yaw_offset   += mpu.getAngleZ();
-  }
-
-  roll_offset  /= 1000;
-  pitch_offset /= 1000;
-  yaw_offset   /= 1000;
-
-  Serial.print("*T");
-  Serial.println("\nCalibrating angles done.");
-  Serial.println("Offsets:");
-  Serial.println("--------------");
-  Serial.print  ("roll:  ");  Serial.println(roll_offset);
-  Serial.print  ("pitch: ");  Serial.println(pitch_offset);
-  Serial.print  ("yaw:   ");  Serial.println(yaw_offset);
-  Serial.println("--------------");
-  Serial.println("*");
-
-  Serial.print("*T");
-  mpu.calcGyroOffsets(true, 3000, 1000);
+  mpu.calcOffsets();
   Serial.println("*");
 
   Serial.println("*GC*");
@@ -174,24 +142,24 @@ void loop(void) {
   //  timer[1] = micros();
   mpu.update();
 
-  roll  = mpu.getAngleX() - roll_offset;
-  pitch = mpu.getAngleY() - pitch_offset;
-  yaw   = mpu.getAngleZ() - yaw_offset;
+  roll  = mpu.getAngleX();
+  pitch = mpu.getAngleY();
+  yaw   = mpu.getAngleZ();
 
-  //  if (millis() - timer[0] > 100) {
-  //
-  //    //    Serial.print("\t");
-  //    //    Serial.print(thrust);
-  //    Serial.print(roll);
-  //    Serial.print("\t");
-  //    Serial.print(pitch);
-  //    Serial.print("\t");
-  //    Serial.println(yaw);
-  //
-  //    timer[2] = millis();
-  //  }
+  if (millis() - timer[0] > 100) {
 
-  remoteControl();
+    //    Serial.print("\t");
+    //    Serial.print(thrust);
+    Serial.print(roll);
+    Serial.print("\t");
+    Serial.print(pitch);
+    Serial.print("\t");
+    Serial.println(yaw);
+
+    timer[2] = millis();
+  }
+
+  remoteControl(false);
 
   stabilization();
 
@@ -309,9 +277,9 @@ void stabilization(void) {
 // REMOTE CONTROL
 /////////////////////////////////////////////////////////////////////////////
 
-void remoteControl(void) {
+void remoteControl(bool console) {
 
-  if (millis() - timer[0] > 100) {
+  if (console && millis() - timer[0] > 100) {
 
     Serial.print("*G");
     Serial.print(roll);
@@ -356,9 +324,11 @@ void remoteControl(void) {
           // Do nothing
           break;
         default:
-          Serial.print("*T");
-          Serial.println("Syntax error!");
-          Serial.println("*");
+          if (console) {
+            Serial.print("*T");
+            Serial.println("Syntax error!");
+            Serial.println("*");
+          }
       }
 
       cmdThrust = constrain(cmdThrust, THRUST_CMD_MIN, THRUST_CMD_MAX);
@@ -367,48 +337,58 @@ void remoteControl(void) {
     } else if (isPrefix("THRUST_")) {
 
       int val = atoi(serial_buff + 7);
-      if (val < 0) {
+      if (console && val < 0) {
         Serial.print("*T");
         Serial.print("Error: Negative value is forbidden! THRUST: "); Serial.print(val);
         Serial.println("*");
       } else {
         cmdThrust = val;
-        Serial.print("*T");
-        Serial.print("cmd: THRUST = "); Serial.println(cmdThrust);
-        Serial.println("*");
+        if (console) {
+          Serial.print("*T");
+          Serial.print("cmd: THRUST = "); Serial.println(cmdThrust);
+          Serial.println("*");
+        }
       }
 
     } else if (isPrefix("FB_ON")) {
 
       closed_system = true;
 
-      Serial.print("*T");
-      Serial.println("cmd: FB_ON");
-      Serial.println("*");
+      if (console) {
+        Serial.print("*T");
+        Serial.println("cmd: FB_ON");
+        Serial.println("*");
+      }
     } else if (isPrefix("FB_OFF")) {
 
       closed_system = false;
 
-      Serial.print("*T");
-      Serial.println("cmd: FB_OFF");
-      Serial.println("*");
+      if (console) {
+        Serial.print("*T");
+        Serial.println("cmd: FB_OFF");
+        Serial.println("*");
+      }
     } else if (isPrefix("RESET_PID")) {
 
       roll_PID.reset();
       pitch_PID.reset();
       yaw_PID.reset();
 
-      Serial.print("*T");
-      Serial.println("cmd: RESET_PID");
-      Serial.println("*");
+      if (console) {
+        Serial.print("*T");
+        Serial.println("cmd: RESET_PID");
+        Serial.println("*");
+      }
 
     } else if (isPrefix("PROPS_ON")) {
 
       PROPS_ON = true;
 
-      Serial.print("*T");
-      Serial.println("cmd: PROPS_ON");
-      Serial.println("*");
+      if (console) {
+        Serial.print("*T");
+        Serial.println("cmd: PROPS_ON");
+        Serial.println("*");
+      }
 
     } else if (isPrefix("PROPS_OFF")) {
 
@@ -420,18 +400,22 @@ void remoteControl(void) {
       PROPS_ON = false;
       MANUAL = false;
 
-      Serial.print("*T");
-      Serial.println("cmd: PROPS_OFF");
-      Serial.println("cmd: AUTO");
-      Serial.println("*");
+      if (console) {
+        Serial.print("*T");
+        Serial.println("cmd: PROPS_OFF");
+        Serial.println("cmd: AUTO");
+        Serial.println("*");
+      }
 
     } else if (isPrefix("PROP")) {
 
       if (isNum(serial_buff + 6)) {
         int val = atoi(serial_buff + 6);  // cmd: PROPn_val
         if (val >= 0) {
-          Serial.print("Value: ");
-          Serial.println(val);
+          if (console) {
+            Serial.print("Value: ");
+            Serial.println(val);
+          }
           if (val <= 255) {
             switch (*(serial_buff + 4)) {
               case '1':
@@ -453,21 +437,23 @@ void remoteControl(void) {
                 analogWrite(P4, val);
                 break;
               default:
-                Serial.print("*T");
-                Serial.println("Syntax error! (PROPS)");
-                Serial.println("*");
+                if (console) {
+                  Serial.print("*T");
+                  Serial.println("Syntax error! (PROPS)");
+                  Serial.println("*");
+                }
             }
-          } else {
+          } else if (console) {
             Serial.print("*T");
             Serial.println("Value not in range 0-255");
             Serial.println("*");
           }
-        } else {
+        } else if (console) {
           Serial.print("*T");
           Serial.println("Negative values are forbidden");
           Serial.println("*");
         }
-      } else {
+      } else if (console) {
         Serial.print("*T");
         Serial.print("Value not a number:"); Serial.println(serial_buff + 6);
         Serial.println("*");
@@ -476,7 +462,7 @@ void remoteControl(void) {
     } else if (isPrefix("RP_KP_")) {
 
       int val = atoi(serial_buff + 6);
-      if (val < 0) {
+      if (console && val < 0) {
         Serial.print("*T");
         Serial.print("Error: Negative value is forbidden! RP_KP: "); Serial.print(val);
         Serial.println("*");
@@ -484,15 +470,18 @@ void remoteControl(void) {
         float coef = RP_KP_MAX * (float)val / 255.0f;
         roll_PID.set_k_p( coef );
         pitch_PID.set_k_p( coef );
-        Serial.print("*T");
-        Serial.print("cmd: RP_KP = "); Serial.println(coef);
-        Serial.println("*");
+
+        if (console) {
+          Serial.print("*T");
+          Serial.print("cmd: RP_KP = "); Serial.println(coef);
+          Serial.println("*");
+        }
       }
 
     } else if (isPrefix("RP_KI_")) {
 
       int val = atoi(serial_buff + 6);
-      if (val < 0) {
+      if (console && val < 0) {
         Serial.print("*T");
         Serial.print("Error: Negative value is forbidden! RP_KI: "); Serial.print(val);
         Serial.println("*");
@@ -500,15 +489,18 @@ void remoteControl(void) {
         float coef = RP_KI_MAX * (float)val / 255.0f;
         roll_PID.set_k_i( coef );
         pitch_PID.set_k_i( coef );
-        Serial.print("*T");
-        Serial.print("cmd: RP_KI = "); Serial.println(coef, 3);
-        Serial.println("*");
+
+        if (console) {
+          Serial.print("*T");
+          Serial.print("cmd: RP_KI = "); Serial.println(coef, 3);
+          Serial.println("*");
+        }
       }
 
     } else if (isPrefix("RP_KD_")) {
 
       int val = atoi(serial_buff + 6);
-      if (val < 0) {
+      if (console && val < 0) {
         Serial.print("*T");
         Serial.print("Error: Negative value is forbidden! RP_KD: "); Serial.print(val);
         Serial.println("*");
@@ -516,23 +508,29 @@ void remoteControl(void) {
         float coef = RP_KD_MAX * (float)val / 255.0f;
         roll_PID.set_k_d( coef );
         pitch_PID.set_k_d( coef );
-        Serial.print("*T");
-        Serial.print("cmd: RP_KD = "); Serial.println(coef);
-        Serial.println("*");
+
+        if (console) {
+          Serial.print("*T");
+          Serial.print("cmd: RP_KD = "); Serial.println(coef);
+          Serial.println("*");
+        }
       }
     } else if (isPrefix("Y_KP_")) {
 
       int val = atoi(serial_buff + 5);
-      if (val < 0) {
+      if (console && val < 0) {
         Serial.print("*T");
         Serial.print("Error: Negative value is forbidden! Y_KP: "); Serial.print(val);
         Serial.println("*");
       } else {
         float coef = Y_KP_MAX * (float)val / 255.0f;
         yaw_PID.set_k_p( coef );
-        Serial.print("*T");
-        Serial.print("cmd: Y_KP = "); Serial.println(coef);
-        Serial.println("*");
+
+        if (console) {
+          Serial.print("*T");
+          Serial.print("cmd: Y_KP = "); Serial.println(coef);
+          Serial.println("*");
+        }
       }
 
     } else if (MANUAL) {
@@ -546,30 +544,36 @@ void remoteControl(void) {
         if (*(serial_buff + 11) == 'X') {
 
           cmdRoll = atoi(serial_buff + 12);
-          Serial.print("*T");
-          Serial.print("cmdRoll = "); Serial.println(cmdRoll);
-          Serial.println("*");
+
+          if (console) {
+            Serial.print("*T");
+            Serial.print("cmdRoll = "); Serial.println(cmdRoll);
+            Serial.println("*");
+          }
 
           { // scope of "int i;"
             int i;
             for (i = 0; i < BUFF_SIZE; i++) {
               if (serial_buff[i] == 'Y') {
                 cmdPitch = atoi(serial_buff + i + 1);
-                Serial.print("*T");
-                Serial.print("cmdPitch = "); Serial.println(cmdPitch);
-                Serial.println("*");
+
+                if (console) {
+                  Serial.print("*T");
+                  Serial.print("cmdPitch = "); Serial.println(cmdPitch);
+                  Serial.println("*");
+                }
                 break;
               }
             }
 
-            if (serial_buff[i] != 'Y') {
+            if (console && serial_buff[i] != 'Y') {
               Serial.print("*T");
               Serial.println("Syntax error! (ROLL_PITCH-Y)");
               Serial.println("*");
             }
           }
 
-        } else {
+        } else if (console) {
           Serial.print("*T");
           Serial.println("Syntax error! (ROLL_PITCH-X)");
           Serial.println("*");
@@ -580,17 +584,23 @@ void remoteControl(void) {
         cmdRoll = 0;
         cmdPitch = 0;
         cmdYaw = 0;
-        //      cmdThrust = 0;
-        Serial.print("*T");
-        Serial.println("cmd: AUTO");
-        Serial.println("*");
+        //        cmdThrust = 0;
+
+        if (console) {
+          Serial.print("*T");
+          Serial.println("cmd: AUTO");
+          Serial.println("*");
+        }
       }
     } else if (0 == strncmp("MANUAL", serial_buff, 5)) {
       MANUAL = true;
-      Serial.print("*T");
-      Serial.println("cmd: MANUAL");
-      Serial.println("*");
-    } else {
+
+      if (console) {
+        Serial.print("*T");
+        Serial.println("cmd: MANUAL");
+        Serial.println("*");
+      }
+    } else if (console) {
       Serial.print("*T");
       Serial.print("echo: \"");
       Serial.print(serial_buff);
