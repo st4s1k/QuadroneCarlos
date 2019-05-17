@@ -34,6 +34,8 @@
 // DEFINES
 /////////////////////////////////////////////////////////////////////////////
 
+#define LOOP_DELAY          5000 // microseconds
+
 // Custom propeller configuration
 #define P1 M3
 #define P2 M1
@@ -44,19 +46,19 @@
 
 #define ROLL_CMD_MIN       -255
 #define ROLL_CMD_MAX        255
-#define ROLL_MIN           -900 //  -90 deg
-#define ROLL_MAX            900 //   90 deg
+#define ROLL_MIN           -450 //  -45 deg
+#define ROLL_MAX            450 //   45 deg
 
 #define PITCH_CMD_MIN      -255
 #define PITCH_CMD_MAX       255
-#define PITCH_MIN          -900 //  -90 deg
-#define PITCH_MAX           900 //   90 deg
+#define PITCH_MIN          -450 //  -45 deg
+#define PITCH_MAX           450 //   45 deg
 
 #define YAW_CMD_STEP        15
 #define YAW_CMD_MIN        -255
 #define YAW_CMD_MAX         255
-#define YAW_MIN            -3600 // -360 deg
-#define YAW_MAX             3600 //  360 deg
+#define YAW_MIN            -900 //  -90 deg
+#define YAW_MAX             900 //   90 deg
 
 #define THRUST_CMD_STEP     15
 #define THRUST_CMD_MIN      0
@@ -67,10 +69,11 @@
 #define BUFF_SIZE 64
 #define END_OF_LINE         '*'
 
-#define RP_KP_MAX           5.0f
+#define RP_KP_MAX           30.0f
 #define RP_KI_MAX           0.05f
-#define RP_KD_MAX           10.0f
+#define RP_KD_MAX           30.0f
 #define Y_KP_MAX            1.0f
+#define Y_KI_MAX            0.1f
 
 
 
@@ -85,17 +88,13 @@ long    timer[3] = {0, 0, 0};
 
 char    serial_buff[BUFF_SIZE];
 
-float   roll_offset = 0.0f;
-float   pitch_offset = 0.0f;
-float   yaw_offset = 0.0f;
+bool    MANUAL = false;
+bool    PROPS_ON = false;
 
+uint8_t thrust = 0;
 float   roll = 0.0f;
 float   pitch = 0.0f;
 float   yaw = 0.0f;
-int     thrust = 0;
-
-bool    MANUAL = false;
-bool    PROPS_ON = false;
 
 int     cmdThrust = 0;
 int     cmdRoll = 0;
@@ -123,7 +122,8 @@ void setup(void) {
   mpu.begin();
 
   Serial.print("*T");
-  mpu.calcOffsets();
+  mpu.calcGyroOffsets();
+  mpu.calcAngleOffsets();
   Serial.println("*");
 
   Serial.println("*GC*");
@@ -139,34 +139,30 @@ void setup(void) {
 /////////////////////////////////////////////////////////////////////////////
 
 void loop(void) {
-  //  timer[1] = micros();
+
+  //  if ((micros() - timer[1]) > LOOP_DELAY) {
+
   mpu.update();
 
   roll  = mpu.getAngleX();
   pitch = mpu.getAngleY();
   yaw   = mpu.getAngleZ();
 
-  if (millis() - timer[0] > 100) {
+  //  if (millis() - timer[0] > 100) {
+  //    Serial.print(mpu.getAngleKalmanX());
+  //    Serial.print("\t");
+  //    Serial.print(mpu.getAngleKalmanY());
+  //    Serial.print("\t");
+  //    Serial.println(mpu.getAngleZ());
+  //    timer[2] = millis();
+  //  }
 
-    //    Serial.print("\t");
-    //    Serial.print(thrust);
-    Serial.print(roll);
-    Serial.print("\t");
-    Serial.print(pitch);
-    Serial.print("\t");
-    Serial.println(yaw);
-
-    timer[2] = millis();
-  }
-
-  remoteControl(false);
+  remoteControl(true);
 
   stabilization();
 
-  //  Serial.print(micros() - timer[1]);
-  //  Serial.print("\t");
-  //  Serial.println(1000000 / (micros() - timer[1]));
-  //  delay(10);
+  timer[1] = micros();
+  //  }
 }
 
 
@@ -176,11 +172,11 @@ void loop(void) {
 // STABILIZATION
 /////////////////////////////////////////////////////////////////////////////
 
-void stabilization(void) {
+void stabilization() {
 
   // stabilization set-points (in degrees)
-  int roll_sp     = map(cmdRoll,    ROLL_CMD_MIN,   ROLL_CMD_MAX,   ROLL_MIN / 18,   ROLL_MAX / 18);
-  int pitch_sp    = map(cmdPitch,   PITCH_CMD_MIN,  PITCH_CMD_MAX,  PITCH_MIN / 18,  PITCH_MAX / 18);
+  int roll_sp     = map(cmdRoll,    ROLL_CMD_MIN,   ROLL_CMD_MAX,   ROLL_MIN,   ROLL_MAX);
+  int pitch_sp    = map(cmdPitch,   PITCH_CMD_MIN,  PITCH_CMD_MAX,  PITCH_MIN,  PITCH_MAX);
   int yaw_sp      = map(cmdYaw,     YAW_CMD_MIN,    YAW_CMD_MAX,    YAW_MIN,    YAW_MAX);
 
   // Thrust command (THRUST_MIN .. THRUST_MAX)
@@ -241,6 +237,11 @@ void stabilization(void) {
   u2 = constrain(u2, THRUST_MIN, THRUST_MAX);
   u3 = constrain(u3, THRUST_MIN, THRUST_MAX);
   u4 = constrain(u4, THRUST_MIN, THRUST_MAX);
+
+  u1 = (uint8_t)((float)u1 * 0.890f);
+  u2 = (uint8_t)((float)u2 * 0.876f);
+  u3 = (uint8_t)((float)u3 * 0.904f);
+//u4 = (uint8_t)((float)u4 * 1.000f);
 
   if (PROPS_ON) {
     analogWrite(P1, u1 > PROP_CMD_THRESHOLD ? u1 : 0);
@@ -529,6 +530,24 @@ void remoteControl(bool console) {
         if (console) {
           Serial.print("*T");
           Serial.print("cmd: Y_KP = "); Serial.println(coef);
+          Serial.println("*");
+        }
+      }
+
+    } else if (isPrefix("Y_KI_")) {
+
+      int val = atoi(serial_buff + 6);
+      if (console && val < 0) {
+        Serial.print("*T");
+        Serial.print("Error: Negative value is forbidden! Y_KI: "); Serial.print(val);
+        Serial.println("*");
+      } else {
+        float coef = Y_KI_MAX * (float)val / 255.0f;
+        yaw_PID.set_k_i( coef );
+
+        if (console) {
+          Serial.print("*T");
+          Serial.print("cmd: Y_KI = "); Serial.println(coef, 3);
           Serial.println("*");
         }
       }
